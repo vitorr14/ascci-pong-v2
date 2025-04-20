@@ -1,59 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ASCII Pong Game</title>
-  <style>
-    /* Estilos básicos */
-    body {
-      background-color: #222;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    canvas {
-      background-color: #000;
-      display: block;
-      margin: 0 auto;
-    }
-    #victoryMessage {
-      font-size: 40px;
-      color: #fff;
-      display: none;
-      animation: fadeIn 2s forwards;
-    }
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
-    }
-    .particle {
-      position: absolute;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      pointer-events: none;
-      opacity: 0.8;
-      animation: explode 2s ease-out forwards;
-    }
-    @keyframes explode {
-      0% {
-        transform: translate(0, 0);
-        opacity: 1;
-      }
-      100% {
-        transform: translate(var(--x), var(--y));
-        opacity: 0;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Pong</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            background-color: black;
+            color: white;
+        }
+        canvas {
+            border: 2px solid white;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .victory-message {
+            font-size: 24px;
+            margin-top: 50px;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-  <h1>ASCII Pong Game</h1>
-  <div id="victoryMessage"></div>
-  <button onclick="startGame('local')">Jogar com Amigo</button>
-  <button onclick="startGame('bot')">Jogar Contra Bot</button>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <script src="game.js"></script>
-</body>
-</html>
+    <h1>ASCII Pong</h1>
+    <div id="menu">
+        <button id="playWithFriend">Jogar com Amigo</button>
+        <button id="playWithBot">Jogar Contra o Bot</button>
+    </div>
+    <div id="game" class="hidden">
+        <canvas id="pong" width="800" height="600"></canvas>
+        <div class="victory-message hidden" id="victoryMessage"></div>
+        <button id="restartGame" class="hidden">Jogar Novamente</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("pong");
+        const ctx = canvas.getContext("2d");
+        const playWithFriendButton = document.getElementById("playWithFriend");
+        const playWithBotButton = document.getElementById("playWithBot");
+        const gameDiv = document.getElementById("game");
+        const menuDiv = document.getElementById("menu");
+        const victoryMessage = document.getElementById("victoryMessage");
+        const restartButton = document.getElementById("restartGame");
+
+        const PADDLE_WIDTH = 20, PADDLE_HEIGHT = 100;
+        const BALL_RADIUS = 10;
+        const UP_KEY = 38,_
