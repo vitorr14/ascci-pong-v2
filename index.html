@@ -1,38 +1,55 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ASCII Pong</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
       background-color: black;
       color: white;
-      margin: 0;
-      overflow: hidden;
-      font-family: monospace;
+      text-align: center;
     }
 
     canvas {
-      display: block;
-      margin: auto;
-      background-color: #000;
-      border: 2px solid white;
+      border: 1px solid white;
     }
 
     #victory {
-      position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: lime;
-      font-size: 32px;
       display: none;
+      color: white;
+      font-size: 24px;
+    }
+
+    select {
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
   <div id="victory"></div>
+  <canvas id="pong" width="800" height="400"></canvas>
+  <div>
+    <select id="difficulty">
+      <option value="easy">Fácil</option>
+      <option value="medium" selected>Médio</option>
+      <option value="hard">Difícil</option>
+    </select>
+  </div>
+
   <script src="pong.js"></script>
 </body>
 </html>
