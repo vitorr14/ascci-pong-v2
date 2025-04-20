@@ -16,6 +16,35 @@ let ballX = canvas.width / 2, ballY = canvas.height / 2;
 let ballSpeedX = 4, ballSpeedY = 4;
 let player1Y = canvas.height / 2 - paddleHeight / 2, player2Y = canvas.height / 2 - paddleHeight / 2;
 let gameOver = false;
+let gameMode = '';
+
+// Função para iniciar o jogo com um amigo
+function startLocalGame() {
+  gameMode = 'local';
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('gameContainer').style.display = 'block';
+  resetGame();
+}
+
+// Função para iniciar o jogo contra o Bot
+function startBotGame() {
+  gameMode = 'bot';
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('gameContainer').style.display = 'block';
+  resetGame();
+}
+
+// Função para resetar o jogo
+function resetGame() {
+  player1Score = 0;
+  player2Score = 0;
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX = 4;
+  ballSpeedY = 4;
+  gameOver = false;
+  document.getElementById("victory").style.display = "none";
+}
 
 // Configurações de IA
 function updateBot() {
@@ -103,7 +132,9 @@ function update() {
     ballSpeedY = -ballSpeedY;
   }
 
-  updateBot();
+  if (gameMode === 'bot') {
+    updateBot();
+  }
   checkPaddleCollision();
   checkScore();
 
@@ -115,25 +146,18 @@ function update() {
 
 // Função de controle dos jogadores
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp" && player2Y > 0) {
-    player2Y -= 20;
-  } else if (e.key === "ArrowDown" && player2Y < canvas.height - paddleHeight) {
-    player2Y += 20;
-  } else if (e.key === "w" && player1Y > 0) {
-    player1Y -= 20;
-  } else if (e.key === "s" && player1Y < canvas.height - paddleHeight) {
-    player1Y += 20;
+  if (gameMode === 'local') {
+    if (e.key === "ArrowUp" && player2Y > 0) {
+      player2Y -= 20;
+    } else if (e.key === "ArrowDown" && player2Y < canvas.height - paddleHeight) {
+      player2Y += 20;
+    } else if (e.key === "w" && player1Y > 0) {
+      player1Y -= 20;
+    } else if (e.key === "s" && player1Y < canvas.height - paddleHeight) {
+      player1Y += 20;
+    }
   }
 });
-
-// Função para reiniciar o jogo
-function restartGame() {
-  player1Score = 0;
-  player2Score = 0;
-  gameOver = false;
-  document.getElementById("victory").style.display = "none";
-  resetBall();
-}
 
 // Loop do jogo
 function gameLoop() {
