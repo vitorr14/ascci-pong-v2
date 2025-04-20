@@ -1,4 +1,3 @@
-// Variáveis do jogo
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d');
 
@@ -6,18 +5,31 @@ let ctx = canvas.getContext('2d');
 let paddleHeight = 100;
 let paddleWidth = 10;
 let ballSize = 10;
-let player1Y = canvas.height / 2 - paddleHeight / 2;
-let player2Y = canvas.height / 2 - paddleHeight / 2;
-let player1X = 0;
-let player2X = canvas.width - paddleWidth;
-let ballX = canvas.width / 2;
-let ballY = canvas.height / 2;
-let ballSpeedX = 5;
-let ballSpeedY = 5;
-let scorePlayer1 = 0;
-let scorePlayer2 = 0;
+let player1Y, player2Y, player1X, player2X, ballX, ballY, ballSpeedX, ballSpeedY;
+let scorePlayer1 = 0, scorePlayer2 = 0;
 let gameOver = false;
-let difficulty = 'medium'; // Pode ser 'easy', 'medium' ou 'hard'
+let difficulty = 'medium';
+let mode = 'local'; // 'local' ou 'bot'
+
+// Função para escolher o modo de jogo
+function startGame(selectedMode) {
+  mode = selectedMode;
+  scorePlayer1 = 0;
+  scorePlayer2 = 0;
+  player1Y = canvas.height / 2 - paddleHeight / 2;
+  player2Y = canvas.height / 2 - paddleHeight / 2;
+  player1X = 0;
+  player2X = canvas.width - paddleWidth;
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX = 5;
+  ballSpeedY = 5;
+  gameOver = false;
+  document.getElementById("victoryMessage").style.display = "none";
+  document.querySelector('button').style.display = 'none';
+  document.querySelectorAll('button')[1].style.display = 'none';
+  draw();
+}
 
 // Função de IA do Bot
 function updateBot() {
@@ -83,10 +95,10 @@ function drawScore() {
 function updateScore(player) {
   if (player === 1) {
     scorePlayer1++;
-    createExplosion(player1X + 50, player1Y + 50, 10); // Ajuste a posição conforme necessário
+    createExplosion(player1X + 50, player1Y + 50, 10);
   } else {
     scorePlayer2++;
-    createExplosion(player2X - 50, player2Y + 50, 10); // Ajuste a posição conforme necessário
+    createExplosion(player2X - 50, player2Y + 50, 10);
   }
 
   if (scorePlayer1 === 10 || scorePlayer2 === 10) {
@@ -163,8 +175,8 @@ function draw() {
     ballSpeedY = 5;
   }
 
-  // Atualizar a IA
-  if (ballSpeedX > 0) {
+  // Atualizar a IA se o modo for 'bot'
+  if (mode === 'bot' && ballSpeedX > 0) {
     updateBot();
   }
 
