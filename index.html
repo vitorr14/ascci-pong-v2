@@ -17,6 +17,14 @@
       text-align: center;
     }
 
+    #gameContainer {
+      display: none;
+    }
+
+    #menu {
+      display: block;
+    }
+
     canvas {
       border: 1px solid white;
     }
@@ -40,14 +48,21 @@
   </style>
 </head>
 <body>
-  <div id="victory"></div>
-  <canvas id="pong" width="800" height="400"></canvas>
-  <div>
+  <div id="menu">
+    <h1>Escolha o modo de jogo</h1>
+    <button onclick="startLocalGame()">Jogar com amigo (local)</button>
+    <button onclick="startBotGame()">Jogar contra o Bot</button>
+  </div>
+
+  <div id="gameContainer">
     <select id="difficulty">
       <option value="easy">Fácil</option>
       <option value="medium" selected>Médio</option>
       <option value="hard">Difícil</option>
     </select>
+    <br>
+    <canvas id="pong" width="800" height="400"></canvas>
+    <div id="victory"></div>
   </div>
 
   <script src="pong.js"></script>
