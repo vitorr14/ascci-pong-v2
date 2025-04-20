@@ -1,114 +1,118 @@
-const canvas = document.getElementById("pong");
+const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Configurações do jogo
-const PADDLE_WIDTH = 10;
-const PADDLE_HEIGHT = 80;
-const BALL_SIZE = 10;
+let paddleHeight = 100;
+let paddleWidth = 15;
+let ballSize = 10;
 
-// Raquetes
-let paddle1Y = (canvas.height - PADDLE_HEIGHT) / 2;
-let paddle2Y = (canvas.height - PADDLE_HEIGHT) / 2;
-const paddleSpeed = 5;
-const ballSpeed = 4;
+let player1Y = canvas.height / 2 - paddleHeight / 2;
+let player2Y = canvas.height / 2 - paddleHeight / 2;
 
 let ballX = canvas.width / 2;
 let ballY = canvas.height / 2;
-let ballSpeedX = ballSpeed;
-let ballSpeedY = ballSpeed;
+let ballSpeedX = 5;
+let ballSpeedY = 3;
 
-let score1 = 0;
-let score2 = 0;
+let player1Score = 0;
+let player2Score = 0;
+const winScore = 10;
+let gameOver = false;
 
-// Função para desenhar a raquete
-function drawPaddle(x, y) {
-    ctx.fillStyle = "white";
-    ctx.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+document.addEventListener("keydown", movePaddles);
+
+function movePaddles(e) {
+  const speed = 20;
+  if (e.key === "w" && player1Y > 0) player1Y -= speed;
+  if (e.key === "s" && player1Y < canvas.height - paddleHeight) player1Y += speed;
+  if (e.key === "ArrowUp" && player2Y > 0) player2Y -= speed;
+  if (e.key === "ArrowDown" && player2Y < canvas.height - paddleHeight) player2Y += speed;
 }
 
-// Função para desenhar a bolinha
-function drawBall() {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
-    ctx.fill();
+function drawRect(x, y, w, h, color = "white") {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
 }
 
-// Função para desenhar o placar
-function drawScore() {
-    ctx.font = "20px Arial";
-    ctx.fillText(`${score1} : ${score2}`, canvas.width / 2 - 50, 30);
+function drawBall(x, y) {
+  ctx.fillStyle = "white";
+  ctx.fillRect(x, y, ballSize, ballSize);
 }
 
-// Função de movimentação da bolinha
-function moveBall() {
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
-
-    // Colisão com as paredes superior e inferior
-    if (ballY <= 0 || ballY >= canvas.height) {
-        ballSpeedY = -ballSpeedY;
-    }
-
-    // Colisão com as raquetes
-    if (ballX <= PADDLE_WIDTH && ballY >= paddle1Y && ballY <= paddle1Y + PADDLE_HEIGHT) {
-        ballSpeedX = -ballSpeedX;
-    }
-    if (ballX >= canvas.width - PADDLE_WIDTH - BALL_SIZE && ballY >= paddle2Y && ballY <= paddle2Y + PADDLE_HEIGHT) {
-        ballSpeedX = -ballSpeedX;
-    }
-
-    // Pontuação
-    if (ballX <= 0) {
-        score2++;
-        resetBall();
-    } else if (ballX >= canvas.width) {
-        score1++;
-        resetBall();
-    }
+function drawText(text, x, y, size = "30px", color = "white") {
+  ctx.fillStyle = color;
+  ctx.font = `${size} monospace`;
+  ctx.fillText(text, x, y);
 }
 
-// Função para resetar a bolinha
 function resetBall() {
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    ballSpeedX = -ballSpeedX;
-    ballSpeedY = ballSpeed;
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX *= -1;
+  ballSpeedY = (Math.random() * 4) - 2;
 }
 
-// Função para movimentar as raquetes
-function movePaddles() {
-    document.addEventListener("keydown", function(event) {
-        if (event.key === "ArrowUp" && paddle2Y > 0) {
-            paddle2Y -= paddleSpeed;
-        }
-        if (event.key === "ArrowDown" && paddle2Y < canvas.height - PADDLE_HEIGHT) {
-            paddle2Y += paddleSpeed;
-        }
-        if (event.key === "w" && paddle1Y > 0) {
-            paddle1Y -= paddleSpeed;
-        }
-        if (event.key === "s" && paddle1Y < canvas.height - PADDLE_HEIGHT) {
-            paddle1Y += paddleSpeed;
-        }
-    });
+function checkVictory() {
+  if (player1Score >= winScore || player2Score >= winScore) {
+    gameOver = true;
+    document.getElementById("victory").style.display = "block";
+    document.getElementById("victory").innerText = player1Score > player2Score ? "🏆 Jogador 1 venceu!" : "🏆 Jogador 2 venceu!";
+  }
 }
 
-// Função para atualizar o jogo
-function update() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPaddle(0, paddle1Y);
-    drawPaddle(canvas.width - PADDLE_WIDTH, paddle2Y);
-    drawBall();
-    drawScore();
-    moveBall();
+function drawGame() {
+  if (gameOver) return;
+
+  // Movimento da bolinha
+  ballX += ballSpeedX;
+  ballY += ballSpeedY;
+
+  // Colisão topo/fundo
+  if (ballY <= 0 || ballY + ballSize >= canvas.height) {
+    ballSpeedY *= -1;
+  }
+
+  // Colisão com raquete esquerda
+  if (
+    ballX <= paddleWidth &&
+    ballY + ballSize >= player1Y &&
+    ballY <= player1Y + paddleHeight
+  ) {
+    ballSpeedX *= -1;
+  }
+
+  // Colisão com raquete direita
+  if (
+    ballX + ballSize >= canvas.width - paddleWidth &&
+    ballY + ballSize >= player2Y &&
+    ballY <= player2Y + paddleHeight
+  ) {
+    ballSpeedX *= -1;
+  }
+
+  // Pontuação
+  if (ballX <= 0) {
+    player2Score++;
+    resetBall();
+    checkVictory();
+  }
+
+  if (ballX + ballSize >= canvas.width) {
+    player1Score++;
+    resetBall();
+    checkVictory();
+  }
+
+  // Limpa tela
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Desenha elementos
+  drawRect(0, player1Y, paddleWidth, paddleHeight); // Raquete 1
+  drawRect(canvas.width - paddleWidth, player2Y, paddleWidth, paddleHeight); // Raquete 2
+  drawBall(ballX, ballY); // Bolinha
+
+  // Placar
+  drawText(`${player1Score}`, canvas.width / 4, 50);
+  drawText(`${player2Score}`, 3 * canvas.width / 4, 50);
 }
 
-// Função principal que roda o jogo
-function gameLoop() {
-    update();
-    requestAnimationFrame(gameLoop);
-}
-
-movePaddles();
-gameLoop();
+setInterval(drawGame, 1000 / 60);
