@@ -1,195 +1,171 @@
-let canvas = document.getElementById('gameCanvas');
-let ctx = canvas.getContext('2d');
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Pong</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            background-color: black;
+            color: white;
+        }
+        canvas {
+            border: 2px solid white;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .victory-message {
+            font-size: 24px;
+            margin-top: 50px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Pong</h1>
+    <div id="menu">
+        <button id="playWithFriend">Jogar com Amigo</button>
+        <button id="playWithBot">Jogar Contra o Bot</button>
+    </div>
+    <div id="game" class="hidden">
+        <canvas id="pong" width="800" height="600"></canvas>
+        <div class="victory-message hidden" id="victoryMessage"></div>
+        <button id="restartGame" class="hidden">Jogar Novamente</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("pong");
+        const ctx = canvas.getContext("2d");
+        const playWithFriendButton = document.getElementById("playWithFriend");
+        const playWithBotButton = document.getElementById("playWithBot");
+        const gameDiv = document.getElementById("game");
+        const menuDiv = document.getElementById("menu");
+        const victoryMessage = document.getElementById("victoryMessage");
+        const restartButton = document.getElementById("restartGame");
 
-// Parâmetros do jogo
-let paddleHeight = 100;
-let paddleWidth = 10;
-let ballSize = 10;
-let player1Y, player2Y, player1X, player2X, ballX, ballY, ballSpeedX, ballSpeedY;
-let scorePlayer1 = 0, scorePlayer2 = 0;
-let gameOver = false;
-let difficulty = 'medium';
-let mode = 'local'; // 'local' ou 'bot'
+        const PADDLE_WIDTH = 20, PADDLE_HEIGHT = 100;
+        const BALL_RADIUS = 10;
+        const UP_KEY = 38, DOWN_KEY = 40, W_KEY = 87, S_KEY = 83;
 
-// Função para escolher o modo de jogo
-function startGame(selectedMode) {
-  mode = selectedMode;
-  scorePlayer1 = 0;
-  scorePlayer2 = 0;
-  player1Y = canvas.height / 2 - paddleHeight / 2;
-  player2Y = canvas.height / 2 - paddleHeight / 2;
-  player1X = 0;
-  player2X = canvas.width - paddleWidth;
-  ballX = canvas.width / 2;
-  ballY = canvas.height / 2;
-  ballSpeedX = 5;
-  ballSpeedY = 5;
-  gameOver = false;
-  document.getElementById("victoryMessage").style.display = "none";
-  document.querySelector('button').style.display = 'none';
-  document.querySelectorAll('button')[1].style.display = 'none';
-  draw();
-}
+        let paddle1Y = 250, paddle2Y = 250, ballX = 400, ballY = 300;
+        let ballSpeedX = 5, ballSpeedY = 5, paddle1Speed = 0, paddle2Speed = 0;
+        let scorePlayer1 = 0, scorePlayer2 = 0, mode = "friend"; // friend or bot
 
-// Função de IA do Bot
-function updateBot() {
-  const botCenter = player2Y + paddleHeight / 2;
-  const ballSpeed = ballSpeedX;
-  let speed = 2;
-  if (difficulty === 'medium') speed = 4;
-  if (difficulty === 'hard') speed = 6;
+        const updateGame = () => {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
 
-  if (ballSpeed > 0) {
-    if (botCenter < ballY - paddleHeight / 3) player2Y += speed;
-    else if (botCenter > ballY + paddleHeight / 3) player2Y -= speed;
-  }
-}
+            // Control paddle1 (Player 1)
+            if (paddle1Speed > 0 && paddle1Y < canvas.height - PADDLE_HEIGHT) paddle1Y += paddle1Speed;
+            if (paddle1Speed < 0 && paddle1Y > 0) paddle1Y += paddle1Speed;
 
-// Função para desenhar as raquetes
-function drawPaddles() {
-  ctx.fillStyle = 'white';
-  ctx.fillRect(player1X, player1Y, paddleWidth, paddleHeight);
-  ctx.fillRect(player2X, player2Y, paddleWidth, paddleHeight);
-}
+            // Control paddle2 (Player 2 or Bot)
+            if (mode === "friend") {
+                if (paddle2Speed > 0 && paddle2Y < canvas.height - PADDLE_HEIGHT) paddle2Y += paddle2Speed;
+                if (paddle2Speed < 0 && paddle2Y > 0) paddle2Y += paddle2Speed;
+            } else if (mode === "bot") {
+                // Simple AI for Bot
+                if (ballY > paddle2Y + PADDLE_HEIGHT / 2) paddle2Y += 4;
+                if (ballY < paddle2Y + PADDLE_HEIGHT / 2) paddle2Y -= 4;
+            }
 
-// Função para desenhar a bola
-function drawBall() {
-  ctx.beginPath();
-  ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2);
-  ctx.fillStyle = 'white';
-  ctx.fill();
-  ctx.closePath();
-}
+            // Ball collision with top/bottom
+            if (ballY <= BALL_RADIUS || ballY >= canvas.height - BALL_RADIUS) {
+                ballSpeedY = -ballSpeedY;
+            }
 
-// Função para criar o efeito de partículas
-function createExplosion(x, y, numParticles) {
-  const colors = ["#ff0000", "#ff9900", "#66ff66", "#3399ff"];
-  for (let i = 0; i < numParticles; i++) {
-    const particle = document.createElement("div");
-    particle.classList.add("particle");
-    particle.style.left = `${x}px`;
-    particle.style.top = `${y}px`;
-    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    const speed = Math.random() * 2 + 1;
-    const angle = Math.random() * Math.PI * 2;
-    const distance = Math.random() * 50 + 30;
-    particle.style.animation = `explode ${speed}s ease-out forwards`;
-    particle.style.animationDelay = `${Math.random() * 0.5}s`;
-    document.body.appendChild(particle);
+            // Ball collision with paddles
+            if (ballX <= PADDLE_WIDTH && ballY > paddle1Y && ballY < paddle1Y + PADDLE_HEIGHT ||
+                ballX >= canvas.width - PADDLE_WIDTH - BALL_RADIUS && ballY > paddle2Y && ballY < paddle2Y + PADDLE_HEIGHT) {
+                ballSpeedX = -ballSpeedX;
+            }
 
-    setTimeout(() => {
-      particle.remove();
-    }, speed * 1000);
-  }
-}
+            // Ball out of bounds
+            if (ballX <= 0) {
+                scorePlayer2++;
+                resetBall();
+            } else if (ballX >= canvas.width) {
+                scorePlayer1++;
+                resetBall();
+            }
 
-// Função para desenhar o placar
-function drawScore() {
-  ctx.font = '30px Arial';
-  ctx.fillStyle = 'white';
-  ctx.fillText(scorePlayer1, canvas.width / 4, 50);
-  ctx.fillText(scorePlayer2, 3 * canvas.width / 4, 50);
-}
+            // Draw everything
+            drawCanvas();
+            drawScore();
+            drawPaddles();
+            drawBall();
+        };
 
-// Função para atualizar a pontuação
-function updateScore(player) {
-  if (player === 1) {
-    scorePlayer1++;
-    createExplosion(player1X + 50, player1Y + 50, 10);
-  } else {
-    scorePlayer2++;
-    createExplosion(player2X - 50, player2Y + 50, 10);
-  }
+        const drawCanvas = () => {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        };
 
-  if (scorePlayer1 === 10 || scorePlayer2 === 10) {
-    endGame();
-  }
-}
+        const drawPaddles = () => {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+            ctx.fillRect(canvas.width - PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+        };
 
-// Função para finalizar o jogo
-function endGame() {
-  gameOver = true;
-  const victoryMessage = document.getElementById("victoryMessage");
-  victoryMessage.innerText = scorePlayer1 > scorePlayer2 ? "Jogador 1 Venceu!" : "Jogador 2 Venceu!";
-  document.getElementById("victoryMessage").style.display = "block";
-  setTimeout(() => {
-    victoryMessage.innerHTML += '<br><button onclick="restartGame()">Jogar Novamente</button>';
-  }, 2000);
-}
+        const drawBall = () => {
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2, false);
+            ctx.closePath();
+            ctx.fill();
+        };
 
-// Função para reiniciar o jogo
-function restartGame() {
-  scorePlayer1 = 0;
-  scorePlayer2 = 0;
-  player1Y = canvas.height / 2 - paddleHeight / 2;
-  player2Y = canvas.height / 2 - paddleHeight / 2;
-  ballX = canvas.width / 2;
-  ballY = canvas.height / 2;
-  ballSpeedX = 5;
-  ballSpeedY = 5;
-  gameOver = false;
-  document.getElementById("victoryMessage").style.display = "none";
-}
+        const drawScore = () => {
+            ctx.fillStyle = "white";
+            ctx.font = "32px Arial";
+            ctx.fillText(scorePlayer1, canvas.width / 4, 50);
+            ctx.fillText(scorePlayer2, 3 * canvas.width / 4, 50);
+        };
 
-// Função para desenhar o jogo
-function draw() {
-  if (gameOver) return;
+        const resetBall = () => {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = -ballSpeedX;
+            ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
+        };
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const startGame = (selectedMode) => {
+            mode = selectedMode;
+            menuDiv.classList.add("hidden");
+            gameDiv.classList.remove("hidden");
+            requestAnimationFrame(gameLoop);
+        };
 
-  drawPaddles();
-  drawBall();
-  drawScore();
+        const gameLoop = () => {
+            updateGame();
+            requestAnimationFrame(gameLoop);
+        };
 
-  // Movimento da bola
-  ballX += ballSpeedX;
-  ballY += ballSpeedY;
+        playWithFriendButton.addEventListener("click", () => startGame("friend"));
+        playWithBotButton.addEventListener("click", () => startGame("bot"));
+        restartButton.addEventListener("click", () => location.reload());
 
-  // Colisão com o teto e o chão
-  if (ballY - ballSize < 0 || ballY + ballSize > canvas.height) {
-    ballSpeedY = -ballSpeedY;
-  }
+        // Keyboard controls
+        document.addEventListener("keydown", (event) => {
+            if (event.keyCode === W_KEY) paddle1Speed = -8;
+            if (event.keyCode === S_KEY) paddle1Speed = 8;
+            if (event.keyCode === UP_KEY) paddle2Speed = -8;
+            if (event.keyCode === DOWN_KEY) paddle2Speed = 8;
+        });
 
-  // Colisão com as raquetes
-  if (ballX - ballSize < player1X + paddleWidth && ballY > player1Y && ballY < player1Y + paddleHeight) {
-    ballSpeedX = -ballSpeedX;
-  }
-
-  if (ballX + ballSize > player2X && ballY > player2Y && ballY < player2Y + paddleHeight) {
-    ballSpeedX = -ballSpeedX;
-  }
-
-  // Pontuação
-  if (ballX - ballSize < 0) {
-    updateScore(2);
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    ballSpeedX = 5;
-    ballSpeedY = 5;
-  }
-  if (ballX + ballSize > canvas.width) {
-    updateScore(1);
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    ballSpeedX = -5;
-    ballSpeedY = 5;
-  }
-
-  // Atualizar a IA se o modo for 'bot'
-  if (mode === 'bot' && ballSpeedX > 0) {
-    updateBot();
-  }
-
-  requestAnimationFrame(draw);
-}
-
-// Função de controle de teclado
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'ArrowUp' && player2Y > 0) player2Y -= 20;
-  if (event.key === 'ArrowDown' && player2Y < canvas.height - paddleHeight) player2Y += 20;
-  if (event.key === 'w' && player1Y > 0) player1Y -= 20;
-  if (event.key === 's' && player1Y < canvas.height - paddleHeight) player1Y += 20;
-});
-
-// Iniciar o jogo
-draw();
+        document.addEventListener("keyup", (event) => {
+            if (event.keyCode === W_KEY || event.keyCode === S_KEY) paddle1Speed = 0;
+            if (event.keyCode === UP_KEY || event.keyCode === DOWN_KEY) paddle2Speed = 0;
+        });
+    </script>
+</body>
+</html>
