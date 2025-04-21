@@ -1,171 +1,133 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Pong</title>
-    <style>
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            text-align: center;
-            background-color: black;
-            color: white;
-        }
-        canvas {
-            border: 2px solid white;
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px;
-            margin: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .hidden {
-            display: none;
-        }
-        .victory-message {
-            font-size: 24px;
-            margin-top: 50px;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <h1>ASCII Pong</h1>
-    <div id="menu">
-        <button id="playWithFriend">Jogar com Amigo</button>
-        <button id="playWithBot">Jogar Contra o Bot</button>
-    </div>
-    <div id="game" class="hidden">
-        <canvas id="pong" width="800" height="600"></canvas>
-        <div class="victory-message hidden" id="victoryMessage"></div>
-        <button id="restartGame" class="hidden">Jogar Novamente</button>
-    </div>
-    <script>
-        const canvas = document.getElementById("pong");
-        const ctx = canvas.getContext("2d");
-        const playWithFriendButton = document.getElementById("playWithFriend");
-        const playWithBotButton = document.getElementById("playWithBot");
-        const gameDiv = document.getElementById("game");
-        const menuDiv = document.getElementById("menu");
-        const victoryMessage = document.getElementById("victoryMessage");
-        const restartButton = document.getElementById("restartGame");
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-        const PADDLE_WIDTH = 20, PADDLE_HEIGHT = 100;
-        const BALL_RADIUS = 10;
-        const UP_KEY = 38, DOWN_KEY = 40, W_KEY = 87, S_KEY = 83;
+const hitSound = document.getElementById('hitSound');
+const scoreSound = document.getElementById('scoreSound');
+const winSound = document.getElementById('winSound');
 
-        let paddle1Y = 250, paddle2Y = 250, ballX = 400, ballY = 300;
-        let ballSpeedX = 5, ballSpeedY = 5, paddle1Speed = 0, paddle2Speed = 0;
-        let scorePlayer1 = 0, scorePlayer2 = 0, mode = "friend"; // friend or bot
+let mode = 'friend';
 
-        const updateGame = () => {
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
+function startGame(selectedMode) {
+  mode = selectedMode;
+  document.getElementById('menu').style.display = 'none';
+  canvas.style.display = 'block';
+  initGame();
+}
 
-            // Control paddle1 (Player 1)
-            if (paddle1Speed > 0 && paddle1Y < canvas.height - PADDLE_HEIGHT) paddle1Y += paddle1Speed;
-            if (paddle1Speed < 0 && paddle1Y > 0) paddle1Y += paddle1Speed;
+// Constantes do jogo
+const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
+let player1Y = 250, player2Y = 250, ballX = 400, ballY = 300;
+let ballSpeedX = 5, ballSpeedY = 5;
+let score1 = 0, score2 = 0;
+let maxScore = 10;  // Pontuação máxima padrão (pode ser alterada)
 
-            // Control paddle2 (Player 2 or Bot)
-            if (mode === "friend") {
-                if (paddle2Speed > 0 && paddle2Y < canvas.height - PADDLE_HEIGHT) paddle2Y += paddle2Speed;
-                if (paddle2Speed < 0 && paddle2Y > 0) paddle2Y += paddle2Speed;
-            } else if (mode === "bot") {
-                // Simple AI for Bot
-                if (ballY > paddle2Y + PADDLE_HEIGHT / 2) paddle2Y += 4;
-                if (ballY < paddle2Y + PADDLE_HEIGHT / 2) paddle2Y -= 4;
-            }
+const keys = {};
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
 
-            // Ball collision with top/bottom
-            if (ballY <= BALL_RADIUS || ballY >= canvas.height - BALL_RADIUS) {
-                ballSpeedY = -ballSpeedY;
-            }
+function drawRect(x, y, w, h, color = 'white') {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+}
 
-            // Ball collision with paddles
-            if (ballX <= PADDLE_WIDTH && ballY > paddle1Y && ballY < paddle1Y + PADDLE_HEIGHT ||
-                ballX >= canvas.width - PADDLE_WIDTH - BALL_RADIUS && ballY > paddle2Y && ballY < paddle2Y + PADDLE_HEIGHT) {
-                ballSpeedX = -ballSpeedX;
-            }
+function drawBall() {
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(ballX, ballY, ballSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+}
 
-            // Ball out of bounds
-            if (ballX <= 0) {
-                scorePlayer2++;
-                resetBall();
-            } else if (ballX >= canvas.width) {
-                scorePlayer1++;
-                resetBall();
-            }
+function resetBall(winner) {
+  ballX = 400;
+  ballY = 300;
+  ballSpeedX *= -1;
+  ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
+  if (winner) displayWinner(winner);
+}
 
-            // Draw everything
-            drawCanvas();
-            drawScore();
-            drawPaddles();
-            drawBall();
-        };
+function displayWinner(winner) {
+  winSound.play();
+  ctx.fillStyle = 'white';
+  ctx.font = '40px monospace';
+  ctx.fillText(`${winner} venceu!`, 300, 250);
+  ctx.font = '20px monospace';
+  ctx.fillText('Recarregue a página para jogar novamente.', 200, 300);
+  cancelAnimationFrame(gameLoopId);
+}
 
-        const drawCanvas = () => {
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        };
+function drawParticles(x, y) {
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, 70%)`;
+      ctx.beginPath();
+      ctx.arc(x + Math.random() * 30 - 15, y + Math.random() * 30 - 15, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }, i * 10);
+  }
+}
 
-        const drawPaddles = () => {
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
-            ctx.fillRect(canvas.width - PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT);
-        };
+function update() {
+  if (keys['w'] && player1Y > 0) player1Y -= 7;
+  if (keys['s'] && player1Y < canvas.height - paddleHeight) player1Y += 7;
 
-        const drawBall = () => {
-            ctx.fillStyle = "white";
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2, false);
-            ctx.closePath();
-            ctx.fill();
-        };
+  if (mode === 'friend') {
+    if (keys['ArrowUp'] && player2Y > 0) player2Y -= 7;
+    if (keys['ArrowDown'] && player2Y < canvas.height - paddleHeight) player2Y += 7;
+  } else {
+    if (ballY < player2Y + paddleHeight / 2) player2Y -= 5;
+    else if (ballY > player2Y + paddleHeight / 2) player2Y += 5;
+  }
 
-        const drawScore = () => {
-            ctx.fillStyle = "white";
-            ctx.font = "32px Arial";
-            ctx.fillText(scorePlayer1, canvas.width / 4, 50);
-            ctx.fillText(scorePlayer2, 3 * canvas.width / 4, 50);
-        };
+  ballX += ballSpeedX;
+  ballY += ballSpeedY;
 
-        const resetBall = () => {
-            ballX = canvas.width / 2;
-            ballY = canvas.height / 2;
-            ballSpeedX = -ballSpeedX;
-            ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
-        };
+  if (ballY <= 0 || ballY >= canvas.height - ballSize) ballSpeedY *= -1;
 
-        const startGame = (selectedMode) => {
-            mode = selectedMode;
-            menuDiv.classList.add("hidden");
-            gameDiv.classList.remove("hidden");
-            requestAnimationFrame(gameLoop);
-        };
+  // Colisão com raquetes
+  if (
+    ballX < 20 && ballY > player1Y && ballY < player1Y + paddleHeight ||
+    ballX > canvas.width - 20 && ballY > player2Y && ballY < player2Y + paddleHeight
+  ) {
+    ballSpeedX *= -1;
+    hitSound.play();
+  }
 
-        const gameLoop = () => {
-            updateGame();
-            requestAnimationFrame(gameLoop);
-        };
+  // Pontuação
+  if (ballX < 0) {
+    score2++;
+    scoreSound.play();
+    drawParticles(ballX, ballY);
+    if (score2 >= maxScore) return resetBall('Jogador 2');
+    resetBall();
+  }
+  if (ballX > canvas.width) {
+    score1++;
+    scoreSound.play();
+    drawParticles(ballX, ballY);
+    if (score1 >= maxScore) return resetBall('Jogador 1');
+    resetBall();
+  }
+}
 
-        playWithFriendButton.addEventListener("click", () => startGame("friend"));
-        playWithBotButton.addEventListener("click", () => startGame("bot"));
-        restartButton.addEventListener("click", () => location.reload());
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawRect(10, player1Y, paddleWidth, paddleHeight);
+  drawRect(canvas.width - 20, player2Y, paddleWidth, paddleHeight);
+  drawBall();
+  ctx.font = '20px monospace';
+  ctx.fillText(`${score1} : ${score2}`, canvas.width / 2 - 30, 30);
+}
 
-        // Keyboard controls
-        document.addEventListener("keydown", (event) => {
-            if (event.keyCode === W_KEY) paddle1Speed = -8;
-            if (event.keyCode === S_KEY) paddle1Speed = 8;
-            if (event.keyCode === UP_KEY) paddle2Speed = -8;
-            if (event.keyCode === DOWN_KEY) paddle2Speed = 8;
-        });
+let gameLoopId;
+function gameLoop() {
+  update();
+  draw();
+  gameLoopId = requestAnimationFrame(gameLoop);
+}
 
-        document.addEventListener("keyup", (event) => {
-            if (event.keyCode === W_KEY || event.keyCode === S_KEY) paddle1Speed = 0;
-            if (event.keyCode === UP_KEY || event.keyCode === DOWN_KEY) paddle2Speed = 0;
-        });
-    </script>
-</body>
-</html>
+function initGame() {
+  // Pergunta ao usuário qual pontuação ele quer
+  const userMaxScore = prompt('Escolha a pontuação máxima (7, 10 ou 15):');
+  maxScore = [7, 10, 15].includes(parseInt(userMaxScore)) ? parseInt(userMaxScore) : 10;
+  gameLoop();
+}
