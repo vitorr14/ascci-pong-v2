@@ -16,7 +16,7 @@
       justify-content: center;
       height: 100vh;
     }
-    #menu {
+    #menu, #winScreen {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -43,14 +43,19 @@
 <body>
   <div id="menu">
     <h1>ASCII Pong</h1>
+    <label for="maxScore">Escolha a pontuação máxima (7, 10 ou 15):</label>
+    <input id="maxScore" type="number" min="7" max="15" step="1" />
     <button onclick="startGame('friend')">Jogar com Amigo</button>
     <button onclick="startGame('bot')">Jogar contra IA</button>
   </div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <audio id="hitSound" src="sounds/hit.wav"></audio>
-  <audio id="scoreSound" src="sounds/score.wav"></audio>
-  <audio id="winSound" src="sounds/win.wav"></audio>
+  <div id="winScreen" style="display:none">
+    <h2 id="winnerText"></h2>
+    <button onclick="restartGame()">Tentar novamente</button>
+    <button onclick="returnToMenu()">Voltar ao menu</button>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script src="pong.js"></script>
 </body>
