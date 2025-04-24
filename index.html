@@ -64,3 +64,68 @@
   <script src="pong.js"></script>
 </body>
 </html>
+```html
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII Pong</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: white;
+      color: black;
+    }
+    #gameCanvas {
+      display: none;
+      background-color: black;
+    }
+    canvas { background-color: black; }
+    label { font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>ASCII Pong</h1>
+    <button onclick="startGame('friend')">Jogar com Amigo</button>
+    <button onclick="startGame('bot')">Jogar contra IA</button>
+    <label for="maxScore">Pontuação Máxima:</label>
+    <select id="maxScore" onchange="updateMaxScore()">
+      <option value="7">7</option>
+      <option value="10" selected>10</option>
+      <option value="15">15</option>
+    </select>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <audio id="hitSound" src="sounds/hit.wav"></audio>
+  <audio id="scoreSound" src="sounds/score.wav"></audio>
+  <audio id="winSound" src="sounds/win.wav"></audio>
+
+  <script src="pong.js"></script>
+</body>
+</html>
+```
