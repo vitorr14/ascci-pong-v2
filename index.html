@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -23,7 +22,7 @@
       align-items: center;
       gap: 1rem;
     }
-    button {
+    button, select {
       padding: 1rem 2rem;
       font-size: 1.2rem;
       cursor: pointer;
@@ -34,10 +33,9 @@
     }
     #gameCanvas {
       display: none;
-      background-color: black;
+      border: 2px solid white;
+      margin-top: 2rem;
     }
-    canvas { background-color: black; }
-    label { font-size: 1.1rem; }
   </style>
 </head>
 <body>
@@ -54,12 +52,6 @@
   </div>
 
   <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-  <audio id="hitSound" src="sounds/hit.wav"></audio>
-  <audio id="scoreSound" src="sounds/score.wav"></audio>
-  <audio id="winSound" src="sounds/win.wav"></audio>
-
   <script src="pong.js"></script>
 </body>
 </html>
-```
