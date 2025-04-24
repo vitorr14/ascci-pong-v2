@@ -1,29 +1,53 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const hitSound = document.getElementById('hitSound');
-const scoreSound = document.getElementById('scoreSound');
-const winSound = document.getElementById('winSound');
+const menu = document.getElementById('menu');
+const gameScreen = document.getElementById('gameScreen');
+const victoryScreen = document.getElementById('victoryScreen');
+const finalMessage = document.getElementById('finalMessage');
 
-let mode = 'friend';
-
-function startGame(selectedMode) {
-  mode = selectedMode;
-  document.getElementById('menu').style.display = 'none';
-  canvas.style.display = 'block';
-  initGame();
-}
-
-// Constantes do jogo
-const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
-let player1Y = 250, player2Y = 250, ballX = 400, ballY = 300;
-let ballSpeedX = 5, ballSpeedY = 5;
+let player1Y, player2Y, ballX, ballY, ballSpeedX, ballSpeedY;
 let score1 = 0, score2 = 0;
-let maxScore = 10;  // Pontuação máxima padrão (pode ser alterada)
+let maxScore = 10;
+let gameMode = 'friend';
+let gameLoopId;
 
+const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
 const keys = {};
+
 document.addEventListener('keydown', e => keys[e.key] = true);
 document.addEventListener('keyup', e => keys[e.key] = false);
+
+function startGame(mode) {
+  const input = document.getElementById('maxScore').value;
+  const parsed = parseInt(input);
+  if (![7, 10, 15].includes(parsed)) {
+    alert("Escolha apenas 7, 10 ou 15 como pontuação máxima.");
+    return;
+  }
+  maxScore = parsed;
+  gameMode = mode;
+  menu.style.display = 'none';
+  gameScreen.style.display = 'block';
+  victoryScreen.style.display = 'none';
+  resetGame();
+  gameLoop();
+}
+
+function resetGame() {
+  player1Y = canvas.height / 2 - paddleHeight / 2;
+  player2Y = canvas.height / 2 - paddleHeight / 2;
+  score1 = 0;
+  score2 = 0;
+  resetBall();
+}
+
+function resetBall() {
+  ballX = canvas.width / 2;
+  ballY = canvas.height / 2;
+  ballSpeedX = 5 * (Math.random() > 0.5 ? 1 : -1);
+  ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
+}
 
 function drawRect(x, y, w, h, color = 'white') {
   ctx.fillStyle = color;
@@ -35,24 +59,6 @@ function drawBall() {
   ctx.beginPath();
   ctx.arc(ballX, ballY, ballSize / 2, 0, Math.PI * 2);
   ctx.fill();
-}
-
-function resetBall(winner) {
-  ballX = 400;
-  ballY = 300;
-  ballSpeedX *= -1;
-  ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
-  if (winner) displayWinner(winner);
-}
-
-function displayWinner(winner) {
-  winSound.play();
-  ctx.fillStyle = 'white';
-  ctx.font = '40px monospace';
-  ctx.fillText(`${winner} venceu!`, 300, 250);
-  ctx.font = '20px monospace';
-  ctx.fillText('Recarregue a página para jogar novamente.', 200, 300);
-  cancelAnimationFrame(gameLoopId);
 }
 
 function drawParticles(x, y) {
@@ -67,10 +73,11 @@ function drawParticles(x, y) {
 }
 
 function update() {
+  // Movimentação dos jogadores
   if (keys['w'] && player1Y > 0) player1Y -= 7;
   if (keys['s'] && player1Y < canvas.height - paddleHeight) player1Y += 7;
 
-  if (mode === 'friend') {
+  if (gameMode === 'friend') {
     if (keys['ArrowUp'] && player2Y > 0) player2Y -= 7;
     if (keys['ArrowDown'] && player2Y < canvas.height - paddleHeight) player2Y += 7;
   } else {
@@ -78,6 +85,7 @@ function update() {
     else if (ballY > player2Y + paddleHeight / 2) player2Y += 5;
   }
 
+  // Movimento da bola
   ballX += ballSpeedX;
   ballY += ballSpeedY;
 
@@ -89,23 +97,25 @@ function update() {
     ballX > canvas.width - 20 && ballY > player2Y && ballY < player2Y + paddleHeight
   ) {
     ballSpeedX *= -1;
-    hitSound.play();
+    // document.getElementById('hitSound').play();
   }
 
   // Pontuação
   if (ballX < 0) {
     score2++;
-    scoreSound.play();
     drawParticles(ballX, ballY);
-    if (score2 >= maxScore) return resetBall('Jogador 2');
-    resetBall();
+    // document.getElementById('scoreSound').play();
+    if (score2 >= maxScore) {
+      showVictory('Jogador 2');
+    } else resetBall();
   }
   if (ballX > canvas.width) {
     score1++;
-    scoreSound.play();
     drawParticles(ballX, ballY);
-    if (score1 >= maxScore) return resetBall('Jogador 1');
-    resetBall();
+    // document.getElementById('scoreSound').play();
+    if (score1 >= maxScore) {
+      showVictory('Jogador 1');
+    } else resetBall();
   }
 }
 
@@ -118,16 +128,30 @@ function draw() {
   ctx.fillText(`${score1} : ${score2}`, canvas.width / 2 - 30, 30);
 }
 
-let gameLoopId;
 function gameLoop() {
   update();
   draw();
   gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-function initGame() {
-  // Pergunta ao usuário qual pontuação ele quer
-  const userMaxScore = prompt('Escolha a pontuação máxima (7, 10 ou 15):');
-  maxScore = [7, 10, 15].includes(parseInt(userMaxScore)) ? parseInt(userMaxScore) : 10;
+function showVictory(winner) {
+  // document.getElementById('winSound').play();
+  cancelAnimationFrame(gameLoopId);
+  gameScreen.style.display = 'none';
+  victoryScreen.style.display = 'flex';
+  finalMessage.innerText = `${winner} venceu!`;
+}
+
+function tryAgain() {
+  resetGame();
+  gameScreen.style.display = 'block';
+  victoryScreen.style.display = 'none';
   gameLoop();
+}
+
+function returnToMenu() {
+  cancelAnimationFrame(gameLoopId);
+  menu.style.display = 'flex';
+  gameScreen.style.display = 'none';
+  victoryScreen.style.display = 'none';
 }
