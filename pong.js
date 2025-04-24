@@ -1,26 +1,23 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const hitSound = document.getElementById('hitSound');
-const scoreSound = document.getElementById('scoreSound');
-const winSound = document.getElementById('winSound');
-
 let mode = 'friend';
-let maxScore = 10; // Default score
+let maxScore = 10;  // Pontuação padrão
 
-// Game state variables
+// Estado do jogo
 let player1Y = 250, player2Y = 250, ballX = 400, ballY = 300;
 let ballSpeedX = 5, ballSpeedY = 5;
 let score1 = 0, score2 = 0;
+let ballMoving = false;
 
 const paddleWidth = 10, paddleHeight = 100, ballSize = 10;
 const keys = {};
 
-// Event listeners for controlling paddles
+// Controle de teclas
 document.addEventListener('keydown', e => keys[e.key] = true);
 document.addEventListener('keyup', e => keys[e.key] = false);
 
-// Start the game with the selected mode
+// Iniciar o jogo
 function startGame(selectedMode) {
   mode = selectedMode;
   document.getElementById('menu').style.display = 'none';
@@ -28,18 +25,19 @@ function startGame(selectedMode) {
   initGame();
 }
 
-// Update max score when user selects a new value
+// Atualizar a pontuação máxima
 function updateMaxScore() {
   const selectedMaxScore = document.getElementById('maxScore').value;
   maxScore = parseInt(selectedMaxScore);
 }
 
-// Game drawing functions
+// Desenhar retângulos
 function drawRect(x, y, w, h, color = 'white') {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, w, h);
 }
 
+// Desenhar a bola
 function drawBall() {
   ctx.fillStyle = 'white';
   ctx.beginPath();
@@ -47,6 +45,7 @@ function drawBall() {
   ctx.fill();
 }
 
+// Criar partículas
 function drawParticles(x, y) {
   for (let i = 0; i < 30; i++) {
     setTimeout(() => {
@@ -58,6 +57,7 @@ function drawParticles(x, y) {
   }
 }
 
+// Exibir vencedor
 function displayWinner(winner) {
   winSound.play();
   ctx.fillStyle = 'white';
@@ -68,19 +68,28 @@ function displayWinner(winner) {
   cancelAnimationFrame(gameLoopId);
 }
 
+// Resetar a bola
 function resetBall(winner) {
   ballX = 400;
   ballY = 300;
   ballSpeedX *= -1;
   ballSpeedY = 5 * (Math.random() > 0.5 ? 1 : -1);
+  ballMoving = false;
   if (winner) displayWinner(winner);
 }
 
-// Update game state
+// Atualizar o estado do jogo
 function update() {
+  if (!ballMoving) {
+    setTimeout(() => ballMoving = true, 2000);  // 2 segundos de atraso após um ponto
+    return;
+  }
+
+  // Movimentação do jogador 1
   if (keys['w'] && player1Y > 0) player1Y -= 7;
   if (keys['s'] && player1Y < canvas.height - paddleHeight) player1Y += 7;
 
+  // Movimentação do jogador 2 ou IA
   if (mode === 'friend') {
     if (keys['ArrowUp'] && player2Y > 0) player2Y -= 7;
     if (keys['ArrowDown'] && player2Y < canvas.height - paddleHeight) player2Y += 7;
@@ -92,9 +101,10 @@ function update() {
   ballX += ballSpeedX;
   ballY += ballSpeedY;
 
+  // Detectando colisão com as bordas superiores e inferiores
   if (ballY <= 0 || ballY >= canvas.height - ballSize) ballSpeedY *= -1;
 
-  // Collision with paddles
+  // Colisão com as raquetes
   if (
     ballX < 20 && ballY > player1Y && ballY < player1Y + paddleHeight ||
     ballX > canvas.width - 20 && ballY > player2Y && ballY < player2Y + paddleHeight
@@ -103,7 +113,7 @@ function update() {
     hitSound.play();
   }
 
-  // Scoring
+  // Pontuação
   if (ballX < 0) {
     score2++;
     scoreSound.play();
@@ -120,7 +130,7 @@ function update() {
   }
 }
 
-// Draw everything on the canvas
+// Desenhar tudo na tela
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawRect(10, player1Y, paddleWidth, paddleHeight);
@@ -130,7 +140,7 @@ function draw() {
   ctx.fillText(`${score1} : ${score2}`, canvas.width / 2 - 30, 30);
 }
 
-// Game loop to update the canvas
+// Loop do jogo
 let gameLoopId;
 function gameLoop() {
   update();
@@ -138,9 +148,10 @@ function gameLoop() {
   gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-// Initialize the game
+// Inicializar o jogo
 function initGame() {
   score1 = 0;
   score2 = 0;
   gameLoop();
 }
+
